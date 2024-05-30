@@ -2,7 +2,7 @@
 {
     public class LocalSaveOptions
     {
-        public const string SECTION_NAME = "LocalSave";
+        public const string SectionName = "LocalSave";
 
         public string BackupFolderPath { get; set; } = String.Empty;
         public string SaveFolderPath { get; set; } = String.Empty;

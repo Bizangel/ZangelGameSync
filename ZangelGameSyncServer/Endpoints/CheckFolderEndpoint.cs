@@ -4,9 +4,21 @@ namespace ZangelGameSyncServer.Endpoints
 {
     public class CheckFolderEndpoint
     {
-        public static async Task<String> Get(ILocalFolderService folderService, HttpRequest request)
+        const string FolderIdQueryParameter = "folderId";
+
+        public static IResult Get(ILocalFolderService folderService, HttpRequest request, ILogger<CheckFolderEndpoint> logger)
         {
-            return "Hello World! " + request.Query["folderId"];
+            string? folderId = request.Query["folderId"];
+            if (folderId == null)
+                return Results.BadRequest($"Missing {FolderIdQueryParameter}");
+
+            if (!folderService.IsValidFolderId(folderId))
+                return Results.BadRequest($"Invalid folder ID {folderId}");
+
+            logger.LogInformation($"Timestamp for folder ID: {folderId} requested!");
+
+            long timeStamp = folderService.GetFolderModifiedUnixTimestamp(folderId);
+            return Results.Ok(timeStamp);
         }
     }
 }
