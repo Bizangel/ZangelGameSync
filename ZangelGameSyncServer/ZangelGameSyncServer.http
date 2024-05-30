@@ -1,0 +1,5 @@
+﻿@ZangelGameSyncServer_HostAddress = https://localhost:7197
+
+GET {{ZangelGameSyncServer_HostAddress}}/
+
+###
