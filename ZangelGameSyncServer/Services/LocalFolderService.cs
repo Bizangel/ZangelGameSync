@@ -47,6 +47,6 @@ namespace ZangelGameSyncServer.Services
             return FolderIdRegex().IsMatch(folderId);
         }
 
-        public string GetBackupFolderPath(string folderId) => BuildBackupFolderPath(folderId);
+        public string GetSaveFolderPath(string folderId) => BuildSaveFolderPath(folderId);
     }
 }

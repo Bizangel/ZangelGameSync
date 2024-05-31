@@ -21,6 +21,9 @@ namespace ZangelGameSyncServer.Options
             if (options.KeepSnapshotDays <= 1)
                 return ValidateOptionsResult.Fail("KeepSnapshotDays must be greater than 1");
 
+            if (options.MaxBackupSnapshots <= 1)
+                return ValidateOptionsResult.Fail("MaxBackupSnapshots must be greater than 1");
+
             if (!File.Exists(options.ResticPasswordFile))
                 return ValidateOptionsResult.Fail($"Invalid ResticPasswordFile , file doesn't exist: {options.ResticPasswordFile}");
 

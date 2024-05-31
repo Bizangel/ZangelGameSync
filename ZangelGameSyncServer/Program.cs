@@ -38,5 +38,6 @@ app.MapGet("/check-folder", CheckFolderEndpoint.Get);
 app.MapPost("/acquire-folder-lock", AcquireLockEndpoint.Post);
 app.MapPost("/release-folder-lock", ReleaseLockEndpoint.Post);
 app.MapPost("/create-folder", CreateFolderEndpoint.Post);
+app.MapPost("/backup-snapshot", BackupSnapshotEndpoint.Post);
 
 app.Run();

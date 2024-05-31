@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Diagnostics;
+using ZangelGameSyncServer.Exceptions;
 using ZangelGameSyncServer.Interfaces;
 using ZangelGameSyncServer.Options;
 
@@ -19,6 +20,7 @@ namespace ZangelGameSyncServer.Services
         ) : IBackupService
     {
         private readonly int _snapshotKeepDays = saveOptions.Value.KeepSnapshotDays;
+        private readonly int _maxSnapshotCount = saveOptions.Value.MaxBackupSnapshots;
         private readonly ILocalFolderService _localFolderService = localFolderService;
         private readonly string _resticPasswordFile = saveOptions.Value.ResticPasswordFile;
         private readonly string _resticExecutablePath = saveOptions.Value.ResticExecutablePath;
@@ -67,25 +69,38 @@ namespace ZangelGameSyncServer.Services
 
         public async Task BackupFolder(string folderId)
         {
-            throw new NotImplementedException();
-            //logger.LogInformation("Creating Snapshot Backup for Folder: {folderId} ", folderId);
+            logger.LogInformation("Creating Restic Snapshot Backup for Folder: {folderId} ", folderId);
 
-
-            //if (!BackupRepositoryExists(folderId))
-            //{
-            //    _logger.LogError("Attempting to backup {folderId}, without proper repository", folderId);
-            //    throw new InvalidOperationException($"Attempting to backup folder {folderId} without proper repository");
-            //}
-
-
-            //logger.LogInformation($"Startign Backing up {folderId} folder");
-
+            if (!BackupRepositoryExists(folderId))
+            {
+                _logger.LogError("Attempting to backup nonexistant folder repository {folderId}", folderId);
+                throw new FolderNotFoundException("Attempting to backup not existant folder", folderId);
+            }
 
             //// 1. Perform Backup
-            //var procResult = await executeRestic($"-r {folderId} ");
+            string folderToBackupPath = Path.GetFullPath(_localFolderService.GetSaveFolderPath(folderId));
+            var procResult = await executeRestic($"-r {folderId} backup {folderToBackupPath}");
+            if (procResult.ExitCode != 0)
+            {
+                _logger.LogError("Error when creating backup snapshot: {output}", procResult.StdOut + procResult.StdErr);
+                throw new InvalidOperationException(procResult.StdErr + procResult.StdOut);
+            }
 
-            //// 2. Possible Forget/Prune older snapshots.
+            // 2. Prune those in not last n-days
+            procResult = await executeRestic($"-r {folderId} forget --keep-within {_snapshotKeepDays}d --prune");
+            if (procResult.ExitCode != 0)
+            {
+                _logger.LogError("Error when pruning after backup: {output}", procResult.StdOut + procResult.StdErr);
+                throw new InvalidOperationException(procResult.StdErr + procResult.StdOut);
+            }
 
+            // 3. Prune those more than max count
+            procResult = await executeRestic($"-r {folderId} forget --keep-last {_maxSnapshotCount} --prune");
+            if (procResult.ExitCode != 0)
+            {
+                _logger.LogError("Error when pruning after backup: {output}", procResult.StdOut + procResult.StdErr);
+                throw new InvalidOperationException(procResult.StdErr + procResult.StdOut);
+            }
         }
 
         public bool BackupRepositoryExists(string folderId)
@@ -97,7 +112,7 @@ namespace ZangelGameSyncServer.Services
         {
             if (BackupRepositoryExists(folderId))
             {
-                _logger.LogInformation($"Attempted Creation of existing Restic repository {folderId}, skipping creation");
+                _logger.LogInformation("Attempted Creation of existing Restic repository {folderId}, skipping creation", folderId);
                 return;
             };
 
