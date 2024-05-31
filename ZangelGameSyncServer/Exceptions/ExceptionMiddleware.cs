@@ -5,10 +5,12 @@ namespace ZangelGameSyncServer.Exceptions
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger _logger;
 
-        public ExceptionMiddleware(RequestDelegate next)
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -29,6 +31,7 @@ namespace ZangelGameSyncServer.Exceptions
             }
             catch (Exception ex)
             {
+                _logger.LogError("Exception {ex}", ex);
                 await HandleGenericExceptionAsync(context, ex);
             }
         }

@@ -2,8 +2,10 @@
 {
     public interface ILocalFolderService
     {
-        public long GetFolderModifiedUnixTimestamp(string folderId);
+        public long GetSaveFolderModifiedTimestamp(string folderId);
         public bool SaveFolderExists(string folderId);
+        public bool BackupFolderExists(string folderId);
         public bool IsValidFolderId(string folderId);
+        public string GetBackupFolderPath(string folderId);
     }
 }

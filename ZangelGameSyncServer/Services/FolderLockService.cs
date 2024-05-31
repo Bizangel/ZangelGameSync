@@ -2,16 +2,11 @@
 
 namespace ZangelGameSyncServer.Services
 {
-    public class FolderLockService : IFolderLockService
+    public class FolderLockService(ILogger<FolderLockService> logger) : IFolderLockService
     {
         public readonly Dictionary<string, string> _folderLocks = [];
         private readonly object _dictLock = new();
-        private readonly ILogger _logger;
-
-        public FolderLockService(ILogger<FolderLockService> logger)
-        {
-            _logger = logger;
-        }
+        private readonly ILogger _logger = logger;
 
         public LockAcquireResult AcquireLock(string requestingUser, string folderName)
         {

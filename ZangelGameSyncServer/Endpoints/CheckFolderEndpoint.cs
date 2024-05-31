@@ -15,9 +15,9 @@ namespace ZangelGameSyncServer.Endpoints
             if (!folderService.IsValidFolderId(folderId))
                 return Results.BadRequest($"Invalid folder ID {folderId}");
 
-            logger.LogInformation($"Timestamp for folder ID: {folderId} requested!");
+            logger.LogInformation($"Timestamp for folder ID: {folderId} requested");
 
-            long timeStamp = folderService.GetFolderModifiedUnixTimestamp(folderId);
+            long timeStamp = folderService.GetSaveFolderModifiedTimestamp(folderId);
             return Results.Ok(timeStamp);
         }
     }
