@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using ZangelGameSyncServer.Endpoints;
 using ZangelGameSyncServer.Exceptions;
 using ZangelGameSyncServer.Interfaces;
+using ZangelGameSyncServer.Middleware;
 using ZangelGameSyncServer.Options;
 using ZangelGameSyncServer.Services;
 
@@ -30,6 +31,7 @@ builder.Services.AddSingleton<IBackupService, ResticBackupService>();
 var app = builder.Build();
 // Add the exception handling middleware
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<RequestLoggerMiddleware>();
 
 // Map Routes
 app.MapGet("/check-folder", CheckFolderEndpoint.Get);
