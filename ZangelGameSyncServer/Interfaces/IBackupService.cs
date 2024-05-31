@@ -4,7 +4,7 @@
     {
         bool BackupRepositoryExists(string folderId);
 
-        void CreateBackupRepository(string folderId);
+        Task CreateBackupRepository(string folderId);
 
         Task BackupFolder(string folderId);
     }

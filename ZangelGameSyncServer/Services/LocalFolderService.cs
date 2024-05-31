@@ -17,7 +17,7 @@ namespace ZangelGameSyncServer.Services
 
         public long GetSaveFolderModifiedTimestamp(string folderId)
         {
-            if (SaveFolderExists(folderId))
+            if (!SaveFolderExists(folderId))
                 throw new FolderNotFoundException($"Unable to find folder {folderId}", folderId);
 
             long timestamp = new DateTimeOffset(

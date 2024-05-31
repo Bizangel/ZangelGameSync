@@ -8,7 +8,7 @@ namespace ZangelGameSyncServer.Endpoints
 
         public static IResult Get(ILocalFolderService folderService, HttpRequest request, ILogger<CheckFolderEndpoint> logger)
         {
-            string? folderId = request.Query["folderId"];
+            string? folderId = request.Query[FolderIdQueryParameter];
             if (folderId == null)
                 return Results.BadRequest($"Missing {FolderIdQueryParameter}");
 

@@ -24,6 +24,7 @@ builder.Services.AddOptions<LocalSaveOptions>()
 builder.Services.AddSingleton<IValidateOptions<LocalSaveOptions>, LocalSaveOptionsValidator>();
 builder.Services.AddSingleton<IFolderLockService, FolderLockService>();
 builder.Services.AddSingleton<ILocalFolderService, LocalFolderService>();
+builder.Services.AddSingleton<IBackupService, ResticBackupService>();
 
 
 var app = builder.Build();
@@ -34,5 +35,6 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.MapGet("/check-folder", CheckFolderEndpoint.Get);
 app.MapPost("/acquire-folder-lock", AcquireLockEndpoint.Post);
 app.MapPost("/release-folder-lock", ReleaseLockEndpoint.Post);
+app.MapPost("/create-folder", CreateFolderEndpoint.Post);
 
 app.Run();

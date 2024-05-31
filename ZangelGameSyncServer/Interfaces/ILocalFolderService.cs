@@ -7,5 +7,6 @@
         public bool BackupFolderExists(string folderId);
         public bool IsValidFolderId(string folderId);
         public string GetBackupFolderPath(string folderId);
-    }
+        public void CreateSaveFolder(string folderId);
+    };
 }
