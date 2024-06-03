@@ -15,13 +15,35 @@ namespace ZangelGameSyncServer.Services
         private string BuildSaveFolderPath(string folderId) => _saveOptions.SaveFolderPath + "/" + folderId;
         private string BuildBackupFolderPath(string folderId) => _saveOptions.BackupFolderPath + "/" + folderId;
 
+        private static DateTime GetLatestModifiedTimestamp(string folderPath)
+        {
+            // Get latest timestamp recursively
+            DateTime latestTimestamp = Directory.GetLastWriteTimeUtc(folderPath);
+            // Get latest timestamp from files
+            foreach (string filePath in Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories))
+            {
+                DateTime fileTimestamp = File.GetLastWriteTimeUtc(filePath);
+                latestTimestamp = fileTimestamp > latestTimestamp ? fileTimestamp : latestTimestamp;
+            }
+
+            // get latest timestamp from folders
+            foreach (string dirPath in Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories))
+            {
+                DateTime dirTimestamp = Directory.GetLastWriteTimeUtc(dirPath);
+                dirTimestamp = dirTimestamp > latestTimestamp ? dirTimestamp : latestTimestamp;
+            }
+
+            // return it
+            return latestTimestamp;
+        }
+
         public long GetSaveFolderModifiedTimestamp(string folderId)
         {
             if (!SaveFolderExists(folderId))
                 throw new FolderNotFoundException($"Unable to find folder {folderId}", folderId);
 
             long timestamp = new DateTimeOffset(
-                Directory.GetLastWriteTimeUtc(BuildSaveFolderPath(folderId))
+                GetLatestModifiedTimestamp(BuildSaveFolderPath(folderId))
             ).ToUnixTimeSeconds();
 
             return timestamp;
