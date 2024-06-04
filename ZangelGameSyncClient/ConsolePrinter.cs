@@ -20,5 +20,12 @@
             Console.WriteLine(msg);
             Console.ResetColor();
         }
+
+        public static void Warn(string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(msg);
+            Console.ResetColor();
+        }
     }
 }
