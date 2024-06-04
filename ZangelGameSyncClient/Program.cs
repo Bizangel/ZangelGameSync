@@ -1,4 +1,6 @@
-﻿static DateTime GetLatestModifiedTimestamp(string folderPath)
+﻿using ZangelGameSyncClient;
+
+static DateTime GetLatestModifiedTimestamp(string folderPath)
 {
     // Get latest timestamp recursively
     DateTime latestTimestamp = Directory.GetLastWriteTimeUtc(folderPath);
@@ -20,10 +22,18 @@
     return latestTimestamp;
 }
 
-string saveFolderTest = @"C:\Users\bizan\Downloads\stellaris";
+// This command will preserve timestamp and sync from src to dst
+// effectively working as a sort of rsync
+// robocopy "C:\Users\bizan\Downloads\stellaris" "\\192.168.0.80\ZangelSaves\stellaris" /MIR /COPY:DAT / DCOPY:T
 
-long timestamp = new DateTimeOffset(
-    GetLatestModifiedTimestamp(saveFolderTest)
-).ToUnixTimeSeconds();
+var client = new SyncAPIClient();
 
-Console.WriteLine($"Timestamp: {timestamp}");
+await client.checkFolder("stellaris");
+
+//string saveFolderTest = @"C:\Users\bizan\Downloads\stellaris";
+
+//long timestamp = new DateTimeOffset(
+//    GetLatestModifiedTimestamp(saveFolderTest)
+//).ToUnixTimeSeconds();
+
+//Console.WriteLine($"Timestamp: {timestamp}");
