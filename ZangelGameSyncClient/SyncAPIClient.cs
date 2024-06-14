@@ -8,7 +8,7 @@
         {
             client = new HttpClient
             {
-                BaseAddress = new Uri(config.RemoteHost)
+                BaseAddress = new Uri(config.RemoteUri)
             };
             client.DefaultRequestHeaders.Accept.Clear(); // it doesn't really matter how it replies, as it's a custom API.
         }

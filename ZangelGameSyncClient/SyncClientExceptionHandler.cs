@@ -1,27 +1,37 @@
 ﻿namespace ZangelGameSyncClient
 {
-    public class SyncClientExceptionHandler
+    internal class SyncClientExceptionHandler
     {
-        public SyncClientExceptionHandler()
+        internal SyncClientExceptionHandler()
         {
         }
 
-        public async Task Handle(Func<Task> action)
+        internal async Task<ExitCode> Handle(Func<Task> action)
         {
             try
             {
                 await action();
+                return ExitCode.SUCCESS;
             }
-            catch (Exception ex) {
-                if (ex is SyncConfigError)
+            catch (Exception ex)
+            {
+                switch (ex)
                 {
-                    ConsolePrinter.Error($"Configuration Error: {ex.Message}");
-                    return;
+                    case SyncConfigException:
+                        ConsolePrinter.Error($"Configuration Error\n{ex.Message}");
+                        return ExitCode.CONFIG_ERROR;
+                    case ArgumentException:
+                        ConsolePrinter.Error($"Invalid Usage Error\n{ex.Message}");
+                        return ExitCode.INVALID_USAGE;
+                    case FileNotFoundException:
+                        ConsolePrinter.Error(ex.Message);
+                        return ExitCode.CONFIG_ERROR;
+                    default:
+                        // unhandled exception, rethrow, but log to allow user to read error
+                        Logger.LogError($"{ex.Message} Stack Trace\n: {ex.StackTrace}");
+                        throw;
                 }
-
-                // unhandled exception, rethrow
-                throw;
             }
-        } 
+        }
     }
 }

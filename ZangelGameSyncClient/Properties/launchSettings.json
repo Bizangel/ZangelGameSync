@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "ZangelGameSyncClient": {
+      "commandName": "Project"
+    },
+    "Run With Config": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\bizan\\Downloads\\run_config.json\""
+    }
+  }
+}

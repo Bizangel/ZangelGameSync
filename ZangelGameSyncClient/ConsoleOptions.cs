@@ -175,5 +175,24 @@ namespace ZangelGameSyncClient
                 return breakResult ?? false;
             }
         }
+
+        public static void AwaitInput()
+        {
+            ConsolePrinter.Info("Press any key to continue...");
+            while (true)
+            {
+                if (Console.KeyAvailable) // await until any key pressed
+                {
+                    Console.ReadKey(true);
+                    return;
+                }
+
+                // or any gamepad main button is pressed
+                if (gamepadIsPressed(GamepadButtons.A) || gamepadIsPressed(GamepadButtons.B) || gamepadIsPressed(GamepadButtons.X) || gamepadIsPressed(GamepadButtons.Y))
+                    return;
+
+                Thread.Sleep(50);
+            }
+        }
     }
 }

@@ -24,7 +24,7 @@
 var exHandler = new SyncClientExceptionHandler();
 
 
-await exHandler.Handle(async () =>
+var exitCode = (int)await exHandler.Handle(async () =>
 {
     // 1. Check for Config
     if (args.Length != 1)
@@ -34,12 +34,12 @@ await exHandler.Handle(async () =>
 
     var apiClient = new SyncAPIClient(config);
     // 2. Check for Folder. Server "may" be down.
-
-    // TODO test reading config properly.
-    // TODO handle errors like connection errors properly. 
+    // TODO handle errors like connection errors / checking non existant folder properly
     var result = await apiClient.CheckFolder(config.RemoteFolderId);
 });
 
+if (exitCode != 0)
+    ConsoleOptions.AwaitInput();
 
 //int x = ConsoleOptions.ChoiceConfirm("Only one will be kept", ["Keep Remote", "Keep Local"],
 //    ["All DATA on Local PC will be overriden, are you sure?", "All DATA on Remote server will be overriden, are you sure?"]
