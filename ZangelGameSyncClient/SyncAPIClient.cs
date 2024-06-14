@@ -2,15 +2,18 @@
 {
     internal class SyncAPIClient
     {
-        static HttpClient client = new HttpClient();
+        private readonly HttpClient client;
 
-        internal SyncAPIClient()
+        internal SyncAPIClient(GameSyncConfig config)
         {
-            client.BaseAddress = new Uri("http://192.168.0.80:7000");
+            client = new HttpClient
+            {
+                BaseAddress = new Uri(config.RemoteHost)
+            };
             client.DefaultRequestHeaders.Accept.Clear(); // it doesn't really matter how it replies, as it's a custom API.
         }
 
-        public async Task<long> checkFolder(string folderId)
+        public async Task<long> CheckFolder(string folderId)
         {
             try
             {

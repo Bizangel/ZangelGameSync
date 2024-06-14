@@ -1,46 +1,27 @@
 ﻿namespace ZangelGameSyncClient
 {
-    // TODO think of a way to rewrite this handler.
-
-    public class SyncClientExceptionHandler : IDisposable
+    public class SyncClientExceptionHandler
     {
-        private bool _disposed = false;
-
         public SyncClientExceptionHandler()
         {
         }
 
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                _disposed = true;
-                // Clean up resources if needed
-            }
-        }
-
-        public void Handle(Action action)
+        public async Task Handle(Func<Task> action)
         {
             try
             {
-                action();
+                await action();
             }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-            }
-        }
+            catch (Exception ex) {
+                if (ex is SyncConfigError)
+                {
+                    ConsolePrinter.Error($"Configuration Error: {ex.Message}");
+                    return;
+                }
 
-        private void HandleException(Exception ex)
-        {
-            if (ex is SyncConfigError)
-            {
-                ConsolePrinter.Error($"Configuration error:\n{ex.Message}");
-                return;
+                // unhandled exception, rethrow
+                throw;
             }
-
-            // unhandled, rethrow
-            throw ex;
-        }
+        } 
     }
 }

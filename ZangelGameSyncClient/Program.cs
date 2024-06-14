@@ -1,24 +1,45 @@
-﻿static DateTime GetLatestModifiedTimestamp(string folderPath)
+﻿using ZangelGameSyncClient;
+
+//static DateTime GetLatestModifiedTimestamp(string folderPath)
+//{
+//    // Get latest timestamp recursively
+//    DateTime latestTimestamp = Directory.GetLastWriteTimeUtc(folderPath);
+//    // Get latest timestamp from files
+//    foreach (string filePath in Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories))
+//    {
+//        DateTime fileTimestamp = File.GetLastWriteTimeUtc(filePath);
+//        latestTimestamp = fileTimestamp > latestTimestamp ? fileTimestamp : latestTimestamp;
+//    }
+
+//    // get latest timestamp from folders
+//    foreach (string dirPath in Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories))
+//    {
+//        DateTime dirTimestamp = Directory.GetLastWriteTimeUtc(dirPath);
+//        dirTimestamp = dirTimestamp > latestTimestamp ? dirTimestamp : latestTimestamp;
+//    }
+
+//    // return it
+//    return latestTimestamp;
+//}
+var exHandler = new SyncClientExceptionHandler();
+
+
+await exHandler.Handle(async () =>
 {
-    // Get latest timestamp recursively
-    DateTime latestTimestamp = Directory.GetLastWriteTimeUtc(folderPath);
-    // Get latest timestamp from files
-    foreach (string filePath in Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories))
-    {
-        DateTime fileTimestamp = File.GetLastWriteTimeUtc(filePath);
-        latestTimestamp = fileTimestamp > latestTimestamp ? fileTimestamp : latestTimestamp;
-    }
+    // 1. Check for Config
+    if (args.Length != 1)
+        throw new ArgumentException("Invalid usage. Specify config file path as first argument");
 
-    // get latest timestamp from folders
-    foreach (string dirPath in Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories))
-    {
-        DateTime dirTimestamp = Directory.GetLastWriteTimeUtc(dirPath);
-        dirTimestamp = dirTimestamp > latestTimestamp ? dirTimestamp : latestTimestamp;
-    }
+    var config = ConfigReader.ReadConfig(args[0]);
 
-    // return it
-    return latestTimestamp;
-}
+    var apiClient = new SyncAPIClient(config);
+    // 2. Check for Folder. Server "may" be down.
+
+    // TODO test reading config properly.
+    // TODO handle errors like connection errors properly. 
+    var result = await apiClient.CheckFolder(config.RemoteFolderId);
+});
+
 
 //int x = ConsoleOptions.ChoiceConfirm("Only one will be kept", ["Keep Remote", "Keep Local"],
 //    ["All DATA on Local PC will be overriden, are you sure?", "All DATA on Remote server will be overriden, are you sure?"]
