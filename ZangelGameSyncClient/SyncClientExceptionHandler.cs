@@ -6,12 +6,11 @@
         {
         }
 
-        internal async Task<ExitCode> Handle(Func<Task> action)
+        internal async Task<ExitCode> Handle(Func<Task<ExitCode>> action)
         {
             try
             {
-                await action();
-                return ExitCode.SUCCESS;
+                return await action();
             }
             catch (Exception ex)
             {
@@ -23,6 +22,9 @@
                     case ArgumentException:
                         ConsolePrinter.Error($"Invalid Usage Error\n{ex.Message}");
                         return ExitCode.INVALID_USAGE;
+                    case SyncServerUnreachableException:
+                        ConsolePrinter.Error($"Connection Error to Server\n{ex.Message}");
+                        return ExitCode.CONNECTION_ERROR;
                     case FileNotFoundException:
                         ConsolePrinter.Error(ex.Message);
                         return ExitCode.CONFIG_ERROR;

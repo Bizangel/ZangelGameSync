@@ -21,41 +21,95 @@
 //    // return it
 //    return latestTimestamp;
 //}
+
+// ===
+// TODOs:
+// - Implement remaining logic
+// - Implement launch game logic
+// - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
+// - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
+// - Add logic to get LOCAL folder modified timestamp recursively.
+// - Add logic to print timestamp in human readable format. Ideally display timezone to avoid issues. But should use local PC timezone.
+// - Implement actual "copying" logic. Use ROBOCOPY for now.
+
 var exHandler = new SyncClientExceptionHandler();
+bool lockAcquired = false;
 
-
-var exitCode = (int)await exHandler.Handle(async () =>
+/* 
+ * =========== 
+ * PRE-GAME EXECUTE LOGIC
+ * =========== 
+ */
+var preExecutionExitCode = (int)await exHandler.Handle(async () =>
 {
-    // 1. Check for Config
+    // ===========================================
+    // 1. Check for config.
+    // ===========================================
     if (args.Length != 1)
         throw new ArgumentException("Invalid usage. Specify config file path as first argument");
 
     var config = ConfigReader.ReadConfig(args[0]);
-
     var apiClient = new SyncAPIClient(config);
-    // 2. Check for Folder. Server "may" be down.
-    // TODO handle errors like connection errors / checking non existant folder properly
-    var result = await apiClient.CheckFolder(config.RemoteFolderId);
+
+    // ===========================================
+    // 2. Check for Folder timestamp. Server "may" be down.
+    // ===========================================
+    long result = -1;
+    try
+    {
+        try
+        {
+            result = await apiClient.CheckFolder(config.RemoteFolderId);
+        }
+        catch (SyncFolderNotFoundException ex) // Folder might not exist, if so, create it seamlessly
+        {
+            ConsolePrinter.Warn($"Folder with ID {config.RemoteFolderId} not found! Creating the folder...");
+            await apiClient.CreateFolder(ex.FolderId);
+            result = await apiClient.CheckFolder(config.RemoteFolderId);
+        }
+    }
+    catch (SyncServerUnreachableException) // Server is down. Give user option to continue or not.
+    {
+        ConsolePrinter.Error("Unable to reach server CLOUD SAVING WILL NOT WORK!");
+        bool confirmedContinue = ConsoleOptions.YesNoConfirm("Do you wish to continue playing? CLOUD SAVING WILL NOT WORK!",
+            "\nAre you sure? There may be cloud sync conflict issues. And some data may be lost. To avoid this, sync as soon as possible when server is backup by re-launching the game. Are you still sure you want to proceed?", null);
+
+        if (!confirmedContinue)
+            return ExitCode.CONNECTION_ERROR;
+
+        return ExitCode.SUCCESS; // skip all other logic, just launch game.
+    }
+
+    if (result == -1)
+        throw new Exception($"Invalid state, unable to fetch folder latest modified timestamp {config.RemoteFolderId}");
+
+    // ===========================================
+    // 3. Attempt to acquire lock.
+    // ===========================================
+
+    return ExitCode.SUCCESS;
 });
 
-if (exitCode != 0)
+if (preExecutionExitCode != 0)
+{
     ConsoleOptions.AwaitInput();
+    return preExecutionExitCode; // stop if non Successful
+}
 
-//int x = ConsoleOptions.ChoiceConfirm("Only one will be kept", ["Keep Remote", "Keep Local"],
-//    ["All DATA on Local PC will be overriden, are you sure?", "All DATA on Remote server will be overriden, are you sure?"]
-//);
+/* 
+ * =========== 
+ * GAME EXECUTE LOGIC
+ * =========== 
+ */
 
-//ConsolePrinter.Info($"You chose: {x}");
+// TODO launch game here
 
+/* 
+ * =========== 
+ * POST GAME EXECUTE LOGIC
+ * =========== 
+ */
 
-//var client = new SyncAPIClient();
+// TODO implement remaining logic here
 
-//await client.checkFolder("stellaris");
-
-////string saveFolderTest = @"C:\Users\bizan\Downloads\stellaris";
-
-////long timestamp = new DateTimeOffset(
-////    GetLatestModifiedTimestamp(saveFolderTest)
-////).ToUnixTimeSeconds();
-
-////Console.WriteLine($"Timestamp: {timestamp}");
+return 0;
