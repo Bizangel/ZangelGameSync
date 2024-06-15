@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace ZangelGameSyncClient
 {
@@ -6,6 +8,18 @@ namespace ZangelGameSyncClient
     internal class SyncFolderNotFoundException(string message, string folderId) : Exception(message)
     {
         internal string FolderId = folderId;
+    }
+
+    internal class LockJsonBody
+    {
+        public string Hostname { get; set; } = String.Empty;
+        public string FolderId { get; set; } = String.Empty;
+
+        public StringContent AsJsonBody()
+        {
+            var text = JsonSerializer.Serialize(this);
+            return new StringContent(text, Encoding.UTF8, "application/json");
+        }
     }
 
     internal class SyncAPIClient
@@ -55,11 +69,19 @@ namespace ZangelGameSyncClient
             try
             {
                 ConsolePrinter.Info($"Creating folder: {folderId}...");
-                var resp = await client.GetAsync($"/create-folder?folderId={folderId}");
+                var resp = await client.PostAsync($"/create-folder?folderId={folderId}",
+                    new LockJsonBody
+                    {
+                        FolderId = folderId,
+                        Hostname = Environment.MachineName
+                    }
+                    .AsJsonBody()
+                );
+
                 var text = await resp.Content.ReadAsStringAsync();
 
                 if (resp.StatusCode != HttpStatusCode.OK)
-                    throw new Exception($"Unable to create folder, received status code: {resp.StatusCode} response: {text}");
+                    throw new Exception($"Unable to create folder, received status code: {(int)resp.StatusCode} response: {text}\n");
 
                 ConsolePrinter.Info($"Server response: {text}");
             }
