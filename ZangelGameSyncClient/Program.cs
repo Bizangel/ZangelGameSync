@@ -1,26 +1,5 @@
 ﻿using ZangelGameSyncClient;
-
-//static DateTime GetLatestModifiedTimestamp(string folderPath)
-//{
-//    // Get latest timestamp recursively
-//    DateTime latestTimestamp = Directory.GetLastWriteTimeUtc(folderPath);
-//    // Get latest timestamp from files
-//    foreach (string filePath in Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories))
-//    {
-//        DateTime fileTimestamp = File.GetLastWriteTimeUtc(filePath);
-//        latestTimestamp = fileTimestamp > latestTimestamp ? fileTimestamp : latestTimestamp;
-//    }
-
-//    // get latest timestamp from folders
-//    foreach (string dirPath in Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories))
-//    {
-//        DateTime dirTimestamp = Directory.GetLastWriteTimeUtc(dirPath);
-//        dirTimestamp = dirTimestamp > latestTimestamp ? dirTimestamp : latestTimestamp;
-//    }
-
-//    // return it
-//    return latestTimestamp;
-//}
+using ZangelGameSyncClient.SyncTransport;
 
 // ===
 // TODOs:
@@ -28,12 +7,10 @@
 // - Implement launch game logic
 // - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
 // - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
-// - Add logic to get LOCAL folder modified timestamp recursively.
-// - Add logic to print timestamp in human readable format. Ideally display timezone to avoid issues. But should use local PC timezone.
-// - Implement actual "copying" logic. Use ROBOCOPY for now.
 
 var exHandler = new SyncClientExceptionHandler();
 bool lockAcquired = false;
+var syncTransport = new RoboCopyTransport();
 
 /* 
  * =========== 
@@ -51,21 +28,24 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
     var config = ConfigReader.ReadConfig(args[0]);
     var apiClient = new SyncAPIClient(config);
 
+    // init transport
+    await syncTransport.Init(config);
+
     // ===========================================
     // 2. Check for Folder timestamp. Server "may" be down.
     // ===========================================
-    long result = -1;
+    long remoteTimestamp = -1;
     try
     {
         try
         {
-            result = await apiClient.CheckFolder(config.RemoteFolderId);
+            remoteTimestamp = await apiClient.CheckFolder(config.RemoteFolderId);
         }
         catch (SyncFolderNotFoundException ex) // Folder might not exist, if so, create it seamlessly
         {
             ConsolePrinter.Warn($"Folder with ID {config.RemoteFolderId} not found! Creating the folder...");
             await apiClient.CreateFolder(ex.FolderId);
-            result = await apiClient.CheckFolder(config.RemoteFolderId);
+            remoteTimestamp = await apiClient.CheckFolder(config.RemoteFolderId);
         }
     }
     catch (SyncServerUnreachableException) // Server is down. Give user option to continue or not.
@@ -80,13 +60,49 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
         return ExitCode.SUCCESS; // skip all other logic, just launch game.
     }
 
-    if (result == -1)
+    if (remoteTimestamp == -1)
         throw new Exception($"Invalid state, unable to fetch folder latest modified timestamp {config.RemoteFolderId}");
 
     // ===========================================
     // 3. Attempt to acquire lock.
     // ===========================================
+    if (!await apiClient.AcquireLock(config.RemoteFolderId))
+    {
+        ConsolePrinter.Error("Folder sync is already being used!");
+        bool confirmedContinue = ConsoleOptions.YesNoConfirm("Do you wish to continue playing? CLOUD SAVING WILL NOT WORK!",
+            "\nAre you sure? There may be cloud sync conflict issues. And some data may be lost. To avoid this, sync as soon as possible when server is backup by re-launching the game. Are you still sure you want to proceed?", null);
 
+        if (!confirmedContinue)
+            return ExitCode.FAILED_LOCK;
+
+        return ExitCode.SUCCESS; // skip all other logic just launch game
+    }
+    lockAcquired = true;
+
+    // Compare obtained modified timestamp with local timestamp
+    var localTimestamp = TimestampAPI.GetLatestModifiedUnixTimestamp(config.LocalSyncFolder);
+
+    if (remoteTimestamp != localTimestamp)
+    {
+        ConsolePrinter.Warn($"[SYNC CONFLICT] Different Remote and Local timestamp found for folder: {config.RemoteFolderId}");
+        int option = ConsoleOptions.ChoiceConfirm("Which version do you which to keep?",
+            [$"Keep Remote ({TimestampAPI.UnixTimestampToHumanReadable(remoteTimestamp)})", $"Keep Local ({TimestampAPI.UnixTimestampToHumanReadable(localTimestamp)})"],
+            ["Are you sure? All local data will be overwritten with the remote.", "Are you sure? All remote data will be overwritten with the local.", null]
+        );
+
+
+        if (option == 0) // Keep Remote
+            await syncTransport.SyncPull(config.RemoteFolderId); // Override Local
+
+        if (option == 1) // Keep Local
+            await syncTransport.SyncPush(config.RemoteFolderId); // Override Remote
+
+        ConsolePrinter.Success("Sync Successful!");
+        return ExitCode.SUCCESS;
+    }
+
+    ConsolePrinter.Success("No Sync Conflict founds!");
+    // No timestamp diff, just launch game perfectly 
     return ExitCode.SUCCESS;
 });
 
@@ -102,6 +118,7 @@ if (preExecutionExitCode != 0)
  * =========== 
  */
 
+ConsolePrinter.Info("Launching game...");
 // TODO launch game here
 
 /* 

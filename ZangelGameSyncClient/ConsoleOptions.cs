@@ -178,7 +178,7 @@ namespace ZangelGameSyncClient
 
         public static void AwaitInput()
         {
-            ConsolePrinter.Info("Press any key to continue...");
+            ConsolePrinter.Info("Press any key/button to continue...");
             while (true)
             {
                 if (Console.KeyAvailable) // await until any key pressed

@@ -5,6 +5,7 @@ using System.Text.Json;
 namespace ZangelGameSyncClient
 {
     internal class SyncServerUnreachableException(string message) : Exception(message) { }
+
     internal class SyncFolderNotFoundException(string message, string folderId) : Exception(message)
     {
         internal string FolderId = folderId;
@@ -69,7 +70,7 @@ namespace ZangelGameSyncClient
             try
             {
                 ConsolePrinter.Info($"Creating folder: {folderId}...");
-                var resp = await client.PostAsync($"/create-folder?folderId={folderId}",
+                var resp = await client.PostAsync($"/create-folder",
                     new LockJsonBody
                     {
                         FolderId = folderId,
@@ -84,6 +85,42 @@ namespace ZangelGameSyncClient
                     throw new Exception($"Unable to create folder, received status code: {(int)resp.StatusCode} response: {text}\n");
 
                 ConsolePrinter.Info($"Server response: {text}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new SyncServerUnreachableException(ex.Message);
+            }
+        }
+
+
+        public async Task<bool> AcquireLock(string folderId)
+        {
+            // Can Return Either 200, 403 (someone else using lock), 404 requesting lock for invalid folder, 400 bad request, or connection error
+            try
+            {
+                ConsolePrinter.Info($"Acquiring lock for folder: {folderId}...");
+                var resp = await client.PostAsync($"/acquire-folder-lock",
+                    new LockJsonBody
+                    {
+                        FolderId = folderId,
+                        Hostname = Environment.MachineName
+                    }
+                    .AsJsonBody()
+                );
+
+                var text = await resp.Content.ReadAsStringAsync();
+
+                switch (resp.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                        ConsolePrinter.Info($"Server response: {text}");
+                        return true; // acquired lock
+                    case HttpStatusCode.Forbidden: // already being used
+                        ConsolePrinter.Error(text);
+                        return false; // unable to acquire lock
+                    default:
+                        throw new Exception($"Unable to acquire lock on folder folder, received status code: {(int)resp.StatusCode} response: {text}\n");
+                }
             }
             catch (HttpRequestException ex)
             {
