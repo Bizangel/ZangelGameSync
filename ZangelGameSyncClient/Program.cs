@@ -5,7 +5,7 @@ using ZangelGameSyncClient.SyncTransport;
 // ===
 // TODOs:
 // - Implement remaining logic
-// - Implement launch game logic
+// - Implement launch game logic (add config which specifies game to launch)
 // - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
 // - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
 

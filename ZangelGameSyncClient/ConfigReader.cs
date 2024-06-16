@@ -56,9 +56,14 @@ namespace ZangelGameSyncClient
             if (!FolderIdRegex().IsMatch(config.RemoteFolderId))
                 throw new SyncConfigException($"Given folder ID: \"{config.RemoteFolderId}\" is invalid. Must must conform to: ^[A-Za-z][A-Za-z0-9_-]*$");
 
+            if (!Path.IsPathRooted(config.RemoteSaveFolder))
+                throw new SyncConfigException($"Relative paths are not supported. Use absolute paths. {config.RemoteSaveFolder}");
+
             // Check that Remote Save folder exists.
             if (!Directory.Exists(config.RemoteSaveFolder))
                 throw new SyncConfigException($"Remote save folder doesn't exist or is unreachable: \"{config.RemoteSaveFolder}\"");
+
+
 
             // Check that remote uri starts with either http / https
             if (!(config.RemoteUri.StartsWith("http://") || config.RemoteUri.StartsWith("https://")))
