@@ -1,4 +1,4 @@
-﻿namespace ZangelGameSyncClient
+﻿namespace ZangelGameSyncClient.ConsoleLogging
 {
     /**
      * I intend to keep this Client with as minimal dependencies as possible, so I'm creating an insanely barebones logging class.

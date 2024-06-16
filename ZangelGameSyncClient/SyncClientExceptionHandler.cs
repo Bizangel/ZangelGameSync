@@ -1,4 +1,6 @@
-﻿namespace ZangelGameSyncClient
+﻿using ZangelGameSyncClient.ConsoleLogging;
+
+namespace ZangelGameSyncClient
 {
     internal class SyncClientExceptionHandler
     {

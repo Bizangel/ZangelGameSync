@@ -1,6 +1,6 @@
 ﻿using Vortice.XInput;
 
-namespace ZangelGameSyncClient
+namespace ZangelGameSyncClient.ConsoleLogging
 {
     internal class ConsoleOptions
     {

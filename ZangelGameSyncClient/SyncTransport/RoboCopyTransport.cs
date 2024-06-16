@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using ZangelGameSyncClient.ConsoleLogging;
 using ZangelGameSyncClient.Interfaces;
 
 namespace ZangelGameSyncClient.SyncTransport

@@ -1,4 +1,4 @@
-﻿namespace ZangelGameSyncClient
+﻿namespace ZangelGameSyncClient.ConsoleLogging
 {
     internal class ConsolePrinter
     {

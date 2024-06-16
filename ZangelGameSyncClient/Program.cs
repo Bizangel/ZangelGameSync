@@ -1,4 +1,5 @@
 ﻿using ZangelGameSyncClient;
+using ZangelGameSyncClient.ConsoleLogging;
 using ZangelGameSyncClient.SyncTransport;
 
 // ===
