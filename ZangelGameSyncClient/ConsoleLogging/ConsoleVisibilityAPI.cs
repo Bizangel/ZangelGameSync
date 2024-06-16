@@ -2,6 +2,7 @@
 
 namespace ZangelGameSyncClient.ConsoleLogging
 {
+    // Taken from: https://stackoverflow.com/questions/3571627/show-hide-the-console-window-of-a-c-sharp-console-application (too many winapi stuff for me to know)
     internal static class ConsoleVisibilityAPI
     {
         [DllImport("kernel32.dll")]
@@ -40,7 +41,6 @@ namespace ZangelGameSyncClient.ConsoleLogging
             IntPtr stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
             Microsoft.Win32.SafeHandles.SafeFileHandle safeFileHandle = new Microsoft.Win32.SafeHandles.SafeFileHandle(stdHandle, true);
             FileStream fileStream = new FileStream(safeFileHandle, FileAccess.Write);
-            //System.Text.Encoding encoding = System.Text.Encoding.GetEncoding(MY_CODE_PAGE);
             StreamWriter standardOutput = new StreamWriter(fileStream, new System.Text.UTF8Encoding(false));
             standardOutput.AutoFlush = true;
             Console.SetOut(standardOutput);
