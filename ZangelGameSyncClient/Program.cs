@@ -9,6 +9,8 @@ using ZangelGameSyncClient.SyncTransport;
 // - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
 // - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
 
+ConsoleVisibilityAPI.AllocateConsole();
+
 var exHandler = new SyncClientExceptionHandler();
 bool lockAcquired = false;
 var syncTransport = new RoboCopyTransport();
@@ -120,8 +122,11 @@ if (preExecutionExitCode != 0)
  */
 
 ConsolePrinter.Info("Launching game...");
-// TODO launch game here
+ConsoleVisibilityAPI.HideConsole();
 
+Thread.Sleep(2_000);
+ConsoleVisibilityAPI.ShowConsole();
+Thread.Sleep(2_000);
 /* 
  * =========== 
  * POST GAME EXECUTE LOGIC
