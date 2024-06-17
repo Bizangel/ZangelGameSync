@@ -5,8 +5,7 @@ using ZangelGameSyncClient.SyncTransport;
 
 // ===
 // TODOs:
-// - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
-// - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
+// - Add automated tests
 
 ConsoleVisibilityAPI.AllocateConsole();
 

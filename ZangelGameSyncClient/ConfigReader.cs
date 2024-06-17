@@ -6,17 +6,20 @@ namespace ZangelGameSyncClient
     internal class SyncConfigException(string message) : Exception(message) { }
     public struct GameSyncConfig
     {
-        public string RemoteUri { get; init; }
-        public string LocalSyncFolder { get; init; }
+        public string RemoteUri { get; set; }
+        public string LocalSyncFolder { get; set; }
         public string RemoteFolderId { get; init; }
-        public string RemoteSaveFolder { get; init; }
-        public string GameExecutable { get; init; }
+        public string RemoteSaveFolder { get; set; }
+        public string GameExecutable { get; set; }
     }
 
     internal partial class ConfigReader
     {
         [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_-]*$")]
         private static partial Regex FolderIdRegex();
+
+        [GeneratedRegex("%(.*?)%")]
+        private static partial Regex FolderEnvTemplateRegex();
 
         private string _configPath = String.Empty;
 
@@ -29,10 +32,35 @@ namespace ZangelGameSyncClient
             var jsonString = File.ReadAllText(configPath);
             GameSyncConfig config = JsonSerializer.Deserialize<GameSyncConfig>(jsonString);
 
+            config.LocalSyncFolder = EvaluatePathWithEnv(config.LocalSyncFolder);
+            config.GameExecutable = EvaluatePathWithEnv(config.GameExecutable);
+            config.RemoteSaveFolder = EvaluatePathWithEnv(config.RemoteSaveFolder);
+
             ValidateConfig(config);
+
+            // Ensure that paths are "standard" i.e. using os-dependant separators, normalized etc.
+            config.LocalSyncFolder = Path.GetFullPath(config.LocalSyncFolder);
+            config.GameExecutable = Path.GetFullPath(config.GameExecutable);
+            config.RemoteSaveFolder = Path.GetFullPath(config.RemoteSaveFolder);
+
             return config;
         }
 
+        public static string EvaluatePathWithEnv(string pathWithEnv)
+        {
+            return FolderEnvTemplateRegex().Replace(pathWithEnv, match =>
+            {
+                string varName = match.Groups[1].Value;
+                return Environment.GetEnvironmentVariable(varName) ?? match.Value;
+            });
+        }
+
+
+        private void ValidateEvaluatedPath(string folderPath)
+        {
+            if (folderPath.Contains('\'') || folderPath.Contains('"') || folderPath.Contains('|'))
+                throw new SyncConfigException($"Invalid path given: {folderPath}, found invalid characters. ");
+        }
 
         private void ValidateConfig(GameSyncConfig config)
         {
@@ -51,6 +79,11 @@ namespace ZangelGameSyncClient
 
             if (String.IsNullOrEmpty(config.GameExecutable))
                 throw new SyncConfigException("Missing configuration parameter GameExecutable. Please specify the path of the game executable to launch.");
+
+            // Check that folder paths are well-formed, no weird character strings, or tricks to possibly maybe avoid injections (not really a big worry but eh being extra safe)
+            ValidateEvaluatedPath(config.GameExecutable);
+            ValidateEvaluatedPath(config.LocalSyncFolder);
+            ValidateEvaluatedPath(config.RemoteSaveFolder);
 
             // Check folder is valid
             if (!Path.IsPathRooted(config.LocalSyncFolder))
