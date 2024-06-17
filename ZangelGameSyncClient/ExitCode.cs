@@ -8,5 +8,6 @@
         CONNECTION_ERROR = 3,
         FAILED_LOCK = 4,
         CONFLICT_STOP = 5,
+        SYNC_ERROR = 6
     }
 }

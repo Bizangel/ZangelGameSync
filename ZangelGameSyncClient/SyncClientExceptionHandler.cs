@@ -1,4 +1,5 @@
 ﻿using ZangelGameSyncClient.ConsoleLogging;
+using ZangelGameSyncClient.Interfaces;
 
 namespace ZangelGameSyncClient
 {
@@ -30,6 +31,9 @@ namespace ZangelGameSyncClient
                     case FileNotFoundException:
                         ConsolePrinter.Error(ex.Message);
                         return ExitCode.CONFIG_ERROR;
+                    case SyncTransportException:
+                        ConsolePrinter.Error(ex.Message);
+                        return ExitCode.SYNC_ERROR;
                     default:
                         // unhandled exception, rethrow, but log to allow user to read error
                         Logger.LogError($"{ex.Message} Stack Trace\n: {ex.StackTrace}");

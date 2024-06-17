@@ -24,6 +24,7 @@ var exHandler = new SyncClientExceptionHandler();
 bool lockAcquired = false;
 var syncTransport = new RoboCopyTransport();
 GameSyncConfig config = new GameSyncConfig();
+SyncAPIClient? apiClient = null;
 
 /* 
  * =========== 
@@ -39,7 +40,7 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
         throw new ArgumentException("Invalid usage. Specify config file path as first argument");
 
     config = new ConfigReader().ReadConfig(args[0]);
-    var apiClient = new SyncAPIClient(config);
+    apiClient = new SyncAPIClient(config);
 
     // init transport
     await syncTransport.Init(config);
@@ -150,7 +151,7 @@ ConsoleVisibilityAPI.HideConsole();
 proc.Start();
 proc.WaitForExit();
 
-// show console on wait
+// show console after game exit
 ConsoleVisibilityAPI.ShowConsole();
 
 /* 
@@ -159,6 +160,37 @@ ConsoleVisibilityAPI.ShowConsole();
  * =========== 
  */
 
-// TODO implement remaining logic here
+if (!lockAcquired) // nothing to do if no lock
+    return 0;
 
-return 0;
+var postExitCode = (int)await exHandler.Handle(async () =>
+{
+    if (apiClient == null)
+        throw new Exception("Invalid client state.");
+
+    // Check for server being up.
+    bool serverUp = false;
+    while (!serverUp)
+    {
+        try
+        {
+            await apiClient.CheckFolder(config.RemoteFolderId);
+            serverUp = true;
+        }
+        catch (SyncServerUnreachableException ex)
+        {
+            ConsoleOptions.YesNoConfirm("Sync server is unreachable or down. Do you want to retry reaching it?", null, "Are you sure? your save progress won't be synced.");
+        }
+    }
+
+    // server is now up, perform sync
+    await syncTransport.SyncPush(config.RemoteFolderId);
+
+    return ExitCode.SUCCESS;
+});
+
+if (postExitCode != 0)
+    ConsoleOptions.AwaitInput(); // if non zero wait so errors can be read etc.
+
+
+return postExitCode;

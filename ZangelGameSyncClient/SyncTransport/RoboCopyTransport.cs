@@ -48,7 +48,7 @@ namespace ZangelGameSyncClient.SyncTransport
 
             if (proc.ExitCode >= 8) // 8 or higher is robocopy error see: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy
             {
-                throw new Exception($"Robocopy ERROR exit code: {proc.ExitCode}. Stopping.");
+                throw new SyncTransportException($"Robocopy ERROR exit code: {proc.ExitCode}. Stopping.");
             }
         }
 
