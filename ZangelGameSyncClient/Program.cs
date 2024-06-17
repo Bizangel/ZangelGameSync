@@ -1,4 +1,5 @@
-﻿using ZangelGameSyncClient;
+﻿using System.Diagnostics;
+using ZangelGameSyncClient;
 using ZangelGameSyncClient.ConsoleLogging;
 using ZangelGameSyncClient.SyncTransport;
 
@@ -9,11 +10,20 @@ using ZangelGameSyncClient.SyncTransport;
 // - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
 // - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
 
+
 ConsoleVisibilityAPI.AllocateConsole();
+
+if (Utils.IsCurrentProcessElevated())
+{
+    ConsolePrinter.Error("Running as administrator is disallowed. Please take your security seriously. Run again.");
+    ConsoleOptions.AwaitInput();
+    return (int)ExitCode.INVALID_USAGE;
+}
 
 var exHandler = new SyncClientExceptionHandler();
 bool lockAcquired = false;
 var syncTransport = new RoboCopyTransport();
+GameSyncConfig config = new GameSyncConfig();
 
 /* 
  * =========== 
@@ -28,7 +38,7 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
     if (args.Length != 1)
         throw new ArgumentException("Invalid usage. Specify config file path as first argument");
 
-    var config = ConfigReader.ReadConfig(args[0]);
+    config = new ConfigReader().ReadConfig(args[0]);
     var apiClient = new SyncAPIClient(config);
 
     // init transport
@@ -121,12 +131,29 @@ if (preExecutionExitCode != 0)
  * =========== 
  */
 
-ConsolePrinter.Info("Launching game...");
+var proc = new Process
+{
+    StartInfo = new ProcessStartInfo
+    {
+        FileName = config.GameExecutable,
+        UseShellExecute = true,
+        WorkingDirectory = Directory.GetParent(config.GameExecutable)?.FullName
+    }
+};
+
+ConsolePrinter.Info($"Launching game: {config.GameExecutable}");
+
 ConsoleVisibilityAPI.HideConsole();
 
-Thread.Sleep(2_000);
+proc.Start();
+proc.WaitForExit();
+
+// show console on wait
 ConsoleVisibilityAPI.ShowConsole();
-Thread.Sleep(2_000);
+
+ConsolePrinter.Warn("Executable stopped!");
+Thread.Sleep(10_000);
+
 /* 
  * =========== 
  * POST GAME EXECUTE LOGIC

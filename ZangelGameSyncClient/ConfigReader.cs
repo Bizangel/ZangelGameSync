@@ -10,6 +10,7 @@ namespace ZangelGameSyncClient
         public string LocalSyncFolder { get; init; }
         public string RemoteFolderId { get; init; }
         public string RemoteSaveFolder { get; init; }
+        public string GameExecutable { get; init; }
     }
 
     internal partial class ConfigReader
@@ -17,8 +18,11 @@ namespace ZangelGameSyncClient
         [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_-]*$")]
         private static partial Regex FolderIdRegex();
 
-        public static GameSyncConfig ReadConfig(string configPath)
+        private string _configPath = String.Empty;
+
+        public GameSyncConfig ReadConfig(string configPath)
         {
+            _configPath = configPath;
             if (!File.Exists(configPath))
                 throw new FileNotFoundException($"Unable to find file: {configPath}");
 
@@ -30,7 +34,7 @@ namespace ZangelGameSyncClient
         }
 
 
-        private static void ValidateConfig(GameSyncConfig config)
+        private void ValidateConfig(GameSyncConfig config)
         {
             // check defined
             if (String.IsNullOrEmpty(config.LocalSyncFolder))
@@ -44,6 +48,9 @@ namespace ZangelGameSyncClient
 
             if (String.IsNullOrEmpty(config.RemoteFolderId))
                 throw new SyncConfigException("Missing configuration parameter RemoteFolderId. Please specify the ID of the folder to associate with the local folder. This should be equal for all clients so that folder is synced properly.");
+
+            if (String.IsNullOrEmpty(config.GameExecutable))
+                throw new SyncConfigException("Missing configuration parameter GameExecutable. Please specify the path of the game executable to launch.");
 
             // Check folder is valid
             if (!Path.IsPathRooted(config.LocalSyncFolder))
@@ -64,6 +71,17 @@ namespace ZangelGameSyncClient
                 throw new SyncConfigException($"Remote save folder doesn't exist or is unreachable: \"{config.RemoteSaveFolder}\"");
 
 
+            // Check game executable
+            if (!Path.IsPathRooted(config.GameExecutable))
+                throw new SyncConfigException($"Relative paths are not supported. Use absolute paths. {config.GameExecutable}");
+
+            if (!File.Exists(config.GameExecutable))
+                throw new SyncConfigException($"Game executable doesn't exist \"{config.GameExecutable}\"");
+
+            // Check that config file is NOT writable. More of a security thing
+            // Why?: This config is effectively being read and executing arbitrary commands based on this commands allowing for a very easy command injection. It's just an added security that definitely doesn't hurt.
+            if (Utils.IsFileWritable(_configPath))
+                throw new SyncConfigException("Configuration file IS writable! Please ensure write rules are present to avoid bad actors to execute other programs. Recommended write access is administrator only.");
 
             // Check that remote uri starts with either http / https
             if (!(config.RemoteUri.StartsWith("http://") || config.RemoteUri.StartsWith("https://")))
