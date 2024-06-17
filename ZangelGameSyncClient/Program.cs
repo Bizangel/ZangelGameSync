@@ -62,9 +62,9 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
             remoteTimestamp = await apiClient.CheckFolder(config.RemoteFolderId);
         }
     }
-    catch (SyncServerUnreachableException) // Server is down. Give user option to continue or not.
+    catch (SyncServerUnreachableException ex) // Server is down. Give user option to continue or not.
     {
-        ConsolePrinter.Error("Unable to reach server CLOUD SAVING WILL NOT WORK!");
+        ConsolePrinter.Error($"Error: {ex.Message}\nUnable to reach server CLOUD SAVING WILL NOT WORK!");
         bool confirmedContinue = ConsoleOptions.YesNoConfirm("Do you wish to continue playing? CLOUD SAVING WILL NOT WORK!",
             "\nAre you sure? There may be cloud sync conflict issues. And some data may be lost. To avoid this, sync as soon as possible when server is backup by re-launching the game. Are you still sure you want to proceed?", null);
 
@@ -151,9 +151,6 @@ ConsoleVisibilityAPI.HideConsole();
 proc.Start();
 proc.WaitForExit();
 
-// show console after game exit
-ConsoleVisibilityAPI.ShowConsole();
-
 /* 
  * =========== 
  * POST GAME EXECUTE LOGIC
@@ -162,6 +159,9 @@ ConsoleVisibilityAPI.ShowConsole();
 
 if (!lockAcquired) // nothing to do if no lock
     return 0;
+
+// show console after game exit
+ConsoleVisibilityAPI.ShowConsole();
 
 var postExitCode = (int)await exHandler.Handle(async () =>
 {
@@ -183,14 +183,26 @@ var postExitCode = (int)await exHandler.Handle(async () =>
         }
     }
 
+    ConsolePrinter.Success("Server is up, performing sync...");
+
     // server is now up, perform sync
     await syncTransport.SyncPush(config.RemoteFolderId);
+    ConsolePrinter.Success("Successfully synced game save");
 
+    // sync performed -> now release lock
+    await apiClient.ReleaseLock(config.RemoteFolderId);
+    ConsolePrinter.Info("Released lock successfully");
+
+    // Now trigger backup on host
+    await apiClient.CreateBackupSnapshot(config.RemoteFolderId);
+    ConsolePrinter.Success("Successfully backuped game save on Sync server!");
+
+    // if fully successful wait a split-sec so we can at least glance at green
+    Thread.Sleep(1500);
     return ExitCode.SUCCESS;
 });
 
 if (postExitCode != 0)
     ConsoleOptions.AwaitInput(); // if non zero wait so errors can be read etc.
-
 
 return postExitCode;

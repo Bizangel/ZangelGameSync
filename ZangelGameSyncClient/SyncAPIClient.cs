@@ -83,7 +83,7 @@ namespace ZangelGameSyncClient
                 var text = await resp.Content.ReadAsStringAsync();
 
                 if (resp.StatusCode != HttpStatusCode.OK)
-                    throw new Exception($"Unable to create folder, received status code: {(int)resp.StatusCode} response: {text}\n");
+                    throw new Exception($"Unable to create folder {folderId}, received status code: {(int)resp.StatusCode} response: {text}\n");
 
                 ConsolePrinter.Info($"Server response: {text}");
             }
@@ -120,7 +120,63 @@ namespace ZangelGameSyncClient
                         ConsolePrinter.Error(text);
                         return false; // unable to acquire lock
                     default:
-                        throw new Exception($"Unable to acquire lock on folder folder, received status code: {(int)resp.StatusCode} response: {text}\n");
+                        throw new Exception($"Unable to acquire lock on folder {folderId}, received status code: {(int)resp.StatusCode} response: {text}\n");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new SyncServerUnreachableException(ex.Message);
+            }
+        }
+
+        public async Task ReleaseLock(string folderId)
+        {
+            // Can Return Either 200, 403 (someone else's lock), releasing lock for invalid folder / already released, 400 bad request, or connection error
+            try
+            {
+                ConsolePrinter.Info($"Releasing lock for folder: {folderId}...");
+                var resp = await client.PostAsync($"/release-folder-lock",
+                    new LockJsonBody
+                    {
+                        FolderId = folderId,
+                        Hostname = Environment.MachineName
+                    }
+                    .AsJsonBody()
+                );
+
+                var text = await resp.Content.ReadAsStringAsync();
+
+                switch (resp.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                        ConsolePrinter.Info($"Server response: {text}");
+                        return;
+                    default:
+                        throw new Exception($"Unable to release lock on folder {folderId}, received status code: {(int)resp.StatusCode} response: {text}\n");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new SyncServerUnreachableException(ex.Message);
+            }
+        }
+
+        public async Task CreateBackupSnapshot(string folderId)
+        {
+            // Can Return Either 200, 404 folder doesn't exist, 400 bad request, or connection error
+            try
+            {
+                ConsolePrinter.Info($"Requesting backup for folder: {folderId}...");
+                var resp = await client.PostAsync($"/backup-snapshot?folderId={folderId}", null);
+                var text = await resp.Content.ReadAsStringAsync();
+
+                switch (resp.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                        ConsolePrinter.Info($"Server response: {text}");
+                        return;
+                    default:
+                        throw new Exception($"Unable to backup {folderId} folder, received status code: {(int)resp.StatusCode} response: {text}\n");
                 }
             }
             catch (HttpRequestException ex)
