@@ -71,14 +71,7 @@ namespace ZangelGameSyncClient
             try
             {
                 ConsolePrinter.Info($"Creating folder: {folderId}...");
-                var resp = await client.PostAsync($"/create-folder",
-                    new LockJsonBody
-                    {
-                        FolderId = folderId,
-                        Hostname = Environment.MachineName
-                    }
-                    .AsJsonBody()
-                );
+                var resp = await client.PostAsync($"/create-folder?folderId={folderId}", null);
 
                 var text = await resp.Content.ReadAsStringAsync();
 
