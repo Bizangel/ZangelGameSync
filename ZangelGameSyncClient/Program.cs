@@ -5,11 +5,8 @@ using ZangelGameSyncClient.SyncTransport;
 
 // ===
 // TODOs:
-// - Implement remaining logic
-// - Implement launch game logic (add config which specifies game to launch)
 // - Add environment variable support to folders using %%. For example %APPDATA% is a common save folder path.
 // - Consider some security measures and validation reading config (Folders should be scrutinized, no special chars, etc.)
-
 
 ConsoleVisibilityAPI.AllocateConsole();
 
@@ -49,6 +46,7 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
     // 2. Check for Folder timestamp. Server "may" be down.
     // ===========================================
     long remoteTimestamp = -1;
+    bool firstTimeCreated = false;
     try
     {
         try
@@ -57,6 +55,7 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
         }
         catch (SyncFolderNotFoundException ex) // Folder might not exist, if so, create it seamlessly
         {
+            firstTimeCreated = true;
             ConsolePrinter.Warn($"Folder with ID {config.RemoteFolderId} not found! Creating the folder...");
             await apiClient.CreateFolder(ex.FolderId);
             remoteTimestamp = await apiClient.CheckFolder(config.RemoteFolderId);
@@ -92,6 +91,15 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
         return ExitCode.SUCCESS; // skip all other logic just launch game
     }
     lockAcquired = true;
+
+    // If first time created then just push don't compare.
+    if (firstTimeCreated)
+    {
+        await syncTransport.SyncPush(config.RemoteFolderId);
+        ConsolePrinter.Success("Sync Successful!");
+        return ExitCode.SUCCESS;
+    }
+
 
     // Compare obtained modified timestamp with local timestamp
     var localTimestamp = TimestampAPI.GetLatestModifiedUnixTimestamp(config.LocalSyncFolder);
