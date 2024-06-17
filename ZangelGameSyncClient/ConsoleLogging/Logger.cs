@@ -11,10 +11,11 @@
             return $"[{DateTime.Now}] [{level}]: {msg}";
         }
 
-        internal static void LogInfo(string msg)
+        internal static void LogInfo(string msg, bool print = false)
         {
             string entry = GetLogEntry(msg, "INFO");
-            ConsolePrinter.Info(entry);
+            if (print)
+                ConsolePrinter.Info(entry);
             LogToFile(entry);
         }
 

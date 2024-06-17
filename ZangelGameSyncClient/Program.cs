@@ -135,13 +135,15 @@ var proc = new Process
 {
     StartInfo = new ProcessStartInfo
     {
-        FileName = config.GameExecutable,
-        UseShellExecute = true,
+        FileName = @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe", // powershell path
+        Arguments = $"Start-Process -Wait {Path.GetFullPath(config.GameExecutable)}",
+        UseShellExecute = false,
         WorkingDirectory = Directory.GetParent(config.GameExecutable)?.FullName
     }
 };
 
-ConsolePrinter.Info($"Launching game: {config.GameExecutable}");
+ConsolePrinter.Info("Launching Game");
+Logger.LogInfo($"Executing: {proc.StartInfo.FileName} with arguments {proc.StartInfo.Arguments}", print: false);
 
 ConsoleVisibilityAPI.HideConsole();
 
@@ -150,9 +152,6 @@ proc.WaitForExit();
 
 // show console on wait
 ConsoleVisibilityAPI.ShowConsole();
-
-ConsolePrinter.Warn("Executable stopped!");
-Thread.Sleep(10_000);
 
 /* 
  * =========== 
