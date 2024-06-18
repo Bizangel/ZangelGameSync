@@ -20,7 +20,7 @@ namespace ZangelGameSyncClient.SyncTransport
         private void ExecuteRobocopy(string srcPath, string dstPath)
         {
 
-            var excludeFlag = String.IsNullOrEmpty(_config.SyncExclude) ? "" : $"/XF {_config.SyncExclude}";
+            var excludeFlag = String.IsNullOrEmpty(_config.SyncExclude) ? "" : $" /XF {_config.SyncExclude}";
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
