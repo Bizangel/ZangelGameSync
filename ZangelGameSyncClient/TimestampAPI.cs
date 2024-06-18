@@ -4,13 +4,26 @@ namespace ZangelGameSyncClient
 {
     internal static class TimestampAPI
     {
-        internal static DateTime GetLatestModifiedTimestamp(string folderPath)
+        internal static DateTime GetLatestModifiedTimestamp(string folderPath, string excludePatternInput)
         {
+            var excludedFiles = new HashSet<string>();
+            string[] excludePatterns = excludePatternInput.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string pattern in excludePatterns)
+            {
+                foreach (string filePath in Directory.GetFiles(folderPath, pattern, SearchOption.AllDirectories))
+                {
+                    excludedFiles.Add(filePath);
+                }
+            }
+
             // Get latest timestamp recursively
             DateTime latestTimestamp = Directory.GetLastWriteTimeUtc(folderPath);
             // Get latest timestamp from files
             foreach (string filePath in Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories))
             {
+                if (excludedFiles.Contains(filePath)) continue;
+
                 DateTime fileTimestamp = File.GetLastWriteTimeUtc(filePath);
                 latestTimestamp = fileTimestamp > latestTimestamp ? fileTimestamp : latestTimestamp;
             }
@@ -25,10 +38,10 @@ namespace ZangelGameSyncClient
             // return it
             return latestTimestamp;
         }
-        internal static long GetLatestModifiedUnixTimestamp(string folderPath)
+        internal static long GetLatestModifiedUnixTimestamp(string folderPath, string excludePattern)
         {
             return new DateTimeOffset(
-                GetLatestModifiedTimestamp(folderPath)
+                GetLatestModifiedTimestamp(folderPath, excludePattern)
             ).ToUnixTimeSeconds();
         }
 

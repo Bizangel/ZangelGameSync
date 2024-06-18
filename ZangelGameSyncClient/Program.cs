@@ -101,7 +101,7 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
 
 
     // Compare obtained modified timestamp with local timestamp
-    var localTimestamp = TimestampAPI.GetLatestModifiedUnixTimestamp(config.LocalSyncFolder);
+    var localTimestamp = TimestampAPI.GetLatestModifiedUnixTimestamp(config.LocalSyncFolder, config.SyncExclude);
 
     if (remoteTimestamp != localTimestamp)
     {
@@ -147,7 +147,7 @@ var proc = new Process
     StartInfo = new ProcessStartInfo
     {
         FileName = @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe", // powershell path
-        Arguments = $"Start-Process -Wait \"{Path.GetFullPath(config.GameExecutable)}\"",
+        Arguments = $"-Command \"Start-Process -Wait '{Path.GetFullPath(config.GameExecutable)}'\"",
         UseShellExecute = false,
         WorkingDirectory = Directory.GetParent(config.GameExecutable)?.FullName
     }
