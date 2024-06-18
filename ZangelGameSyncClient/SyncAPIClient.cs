@@ -52,11 +52,8 @@ namespace ZangelGameSyncClient
                 if (resp.StatusCode != HttpStatusCode.OK)
                     throw new Exception($"Invalid application state, received status code: {resp.StatusCode} response: {text}");
 
-
-
                 var resTimestamp = long.Parse(text);
-                // TODO print here as human readable.
-                ConsolePrinter.Info($"Fetched folder latest modified timestamp successfully: {resTimestamp}");
+                ConsolePrinter.Info($"Fetched folder latest modified timestamp successfully: {TimestampAPI.UnixTimestampToHumanReadable(resTimestamp)}");
                 return resTimestamp;
             }
             catch (HttpRequestException ex)
