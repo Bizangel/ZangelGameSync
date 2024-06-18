@@ -26,7 +26,7 @@ namespace ZangelGameSyncClient.SyncTransport
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = ROBOCOPY_PATH,
-                    Arguments = $"{srcPath} {dstPath} /MIR /COPY:DAT /DCOPY:T" + excludeFlag, // flags to keep timestamp, make copy and delete if needed.
+                    Arguments = $"\"{srcPath}\" \"{dstPath}\" /MIR /COPY:DAT /DCOPY:T" + excludeFlag, // flags to keep timestamp, make copy and delete if needed.
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

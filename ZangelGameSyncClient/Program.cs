@@ -147,7 +147,7 @@ var proc = new Process
     StartInfo = new ProcessStartInfo
     {
         FileName = @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe", // powershell path
-        Arguments = $"Start-Process -Wait {Path.GetFullPath(config.GameExecutable)}",
+        Arguments = $"Start-Process -Wait \"{Path.GetFullPath(config.GameExecutable)}\"",
         UseShellExecute = false,
         WorkingDirectory = Directory.GetParent(config.GameExecutable)?.FullName
     }
