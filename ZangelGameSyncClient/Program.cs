@@ -129,6 +129,9 @@ var preExecutionExitCode = (int)await exHandler.Handle(async () =>
 
 if (preExecutionExitCode != 0)
 {
+    if (lockAcquired && apiClient != null)
+        await apiClient.ReleaseLockCleanup(config.RemoteFolderId);
+
     ConsoleOptions.AwaitInput();
     return preExecutionExitCode; // stop if non Successful
 }
@@ -199,6 +202,7 @@ var postExitCode = (int)await exHandler.Handle(async () =>
     // sync performed -> now release lock
     await apiClient.ReleaseLock(config.RemoteFolderId);
     ConsolePrinter.Info("Released lock successfully");
+    lockAcquired = false;
 
     // Now trigger backup on host
     await apiClient.CreateBackupSnapshot(config.RemoteFolderId);
@@ -210,6 +214,12 @@ var postExitCode = (int)await exHandler.Handle(async () =>
 });
 
 if (postExitCode != 0)
+{
+    if (lockAcquired && apiClient != null)
+        await apiClient.ReleaseLockCleanup(config.RemoteFolderId);
+
     ConsoleOptions.AwaitInput(); // if non zero wait so errors can be read etc.
+}
+
 
 return postExitCode;

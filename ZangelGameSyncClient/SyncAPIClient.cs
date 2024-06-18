@@ -151,6 +151,19 @@ namespace ZangelGameSyncClient
             }
         }
 
+        public async Task ReleaseLockCleanup(string folderId)
+        {
+            try
+            {
+                ConsolePrinter.Info("Cleaning up, attempting to release folder lock");
+                await ReleaseLock(folderId);
+            }
+            catch (Exception)
+            {
+                ConsolePrinter.Error("Unable to release folder lock. Please manually release lock.");
+            }
+        }
+
         public async Task CreateBackupSnapshot(string folderId)
         {
             // Can Return Either 200, 404 folder doesn't exist, 400 bad request, or connection error
