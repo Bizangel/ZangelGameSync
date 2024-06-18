@@ -19,12 +19,14 @@ namespace ZangelGameSyncClient.SyncTransport
 
         private void ExecuteRobocopy(string srcPath, string dstPath)
         {
+
+            var excludeFlag = String.IsNullOrEmpty(_config.SyncExclude) ? "" : $"/XF {_config.SyncExclude}";
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = ROBOCOPY_PATH,
-                    Arguments = $"{srcPath} {dstPath} /MIR /COPY:DAT /DCOPY:T", // flags to keep timestamp, make copy and delete if needed.
+                    Arguments = $"{srcPath} {dstPath} /MIR /COPY:DAT /DCOPY:T" + excludeFlag, // flags to keep timestamp, make copy and delete if needed.
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

@@ -11,6 +11,7 @@ namespace ZangelGameSyncClient
         public string RemoteFolderId { get; init; }
         public string RemoteSaveFolder { get; set; }
         public string GameExecutable { get; set; }
+        public string SyncExclude { get; set; }
     }
 
     internal partial class ConfigReader
@@ -79,6 +80,9 @@ namespace ZangelGameSyncClient
 
             if (String.IsNullOrEmpty(config.GameExecutable))
                 throw new SyncConfigException("Missing configuration parameter GameExecutable. Please specify the path of the game executable to launch.");
+
+            if (config.SyncExclude == null)
+                throw new SyncConfigException("Missing configuration parameter SyncExclude. Please specify the wildcard patterns to exclude like *.bin or *.cfg. If multiple separate from spaces. If wish to exclude no files, just leave empty.");
 
             // Check that folder paths are well-formed, no weird character strings, or tricks to possibly maybe avoid injections (not really a big worry but eh being extra safe)
             ValidateEvaluatedPath(config.GameExecutable);
