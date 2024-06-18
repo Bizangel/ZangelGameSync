@@ -28,13 +28,6 @@ namespace ZangelGameSyncClient
                 latestTimestamp = fileTimestamp > latestTimestamp ? fileTimestamp : latestTimestamp;
             }
 
-            // get latest timestamp from folders
-            foreach (string dirPath in Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories))
-            {
-                DateTime dirTimestamp = Directory.GetLastWriteTimeUtc(dirPath);
-                dirTimestamp = dirTimestamp > latestTimestamp ? dirTimestamp : latestTimestamp;
-            }
-
             // return it
             return latestTimestamp;
         }
